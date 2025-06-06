@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import requests
 
-API_URL = "http://#urlServerFlask/listar"  # Atualize com o endpoint real se necessário
-
+API_URL = "http://#urlServerFlask/listar"  
+# Substitua #urlServerFlask pela URL do seu servidor Flask
 def pegar_dados_recentes():
     try:
         response = requests.get(API_URL)
