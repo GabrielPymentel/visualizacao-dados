@@ -2,8 +2,10 @@ import streamlit as st
 import pandas as pd
 import requests
 
-API_URL = "http://#urlServerFlask/listar"  
-# Substitua #urlServerFlask pela URL do seu servidor Flask
+# Coloca o IP certo aqui
+API_URL = "http://127.0.0.1:5000/listar"  
+# Ex: http://192.168.0.52:5000/listar se a API estiver em outro PC
+
 def pegar_dados_recentes():
     try:
         response = requests.get(API_URL)
@@ -14,6 +16,7 @@ def pegar_dados_recentes():
             df["Data/Hora"] = pd.to_datetime(df["Data/Hora"])
             return df
         else:
+            st.error(f"Erro ao buscar dados. Status code: {response.status_code}")
             return pd.DataFrame()
     except Exception as e:
         st.error(f"Erro ao buscar dados da API: {e}")
@@ -26,7 +29,7 @@ def main_view():
     st.write("""
         Este sistema permite a visualização de dados de sensores de temperatura e umidade do ar e solo, 
         ajudando no controle de chocadeiras de quelônios. Com ele, você pode:
-        
+
         ✅ **Monitorar dados em tempo real**  
         📈 **Visualizar históricos e tendências**  
         🔔 **Receber alertas automáticos sobre variações perigosas**  

@@ -1,30 +1,47 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+import requests
+from datetime import datetime
+
+API_URL = "http://127.0.0.1:5000/listar"  # 👉 Coloca aqui o IP do servidor Flask, se estiver em outro PC
 
 def pegar_dados_historicos():
-    # Simulação de dados reais — depois substitui por uma chamada à API Flask
-    hoje = datetime.today()
-    datas = [hoje - timedelta(days=i) for i in range(9, -1, -1)]  # últimos 10 dias
+    try:
+        response = requests.get(API_URL)
+        if response.status_code == 200:
+            dados = response.json()
+            # Banco tem colunas: id, temperatura, umidade, horario
+            df = pd.DataFrame(dados, columns=["ID", "Temperatura (°C)", "Umidade (%)", "Data/Hora"])
+            df["Data/Hora"] = pd.to_datetime(df["Data/Hora"])
+            df["Data"] = df["Data/Hora"].dt.date  # Só a data, sem hora
 
-    data = {
-        "Data": [d.strftime("%Y-%m-%d") for d in datas],
-        "Temperatura (°C)": [29.5, 30.2, 31.1, 28.7, 30.8, 32.3, 31.5, 29.9, 30.0, 28.9],
-        "Umidade (%)": [78, 80, 76, 85, 82, 88, 70, 74, 77, 79]
-    }
+            # Agrupar por dia (média diária)
+            df_agg = df.groupby("Data").agg({
+                "Temperatura (°C)": "mean",
+                "Umidade (%)": "mean"
+            }).reset_index()
 
-    return pd.DataFrame(data)
+            return df_agg.tail(10)  # Últimos 10 dias
+        else:
+            st.error("Erro ao buscar dados. Código: " + str(response.status_code))
+            return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Erro de conexão com a API: {e}")
+        return pd.DataFrame()
 
 def view_historico():
     st.title("📊 Histórico de Temperatura e Umidade")
 
     df = pegar_dados_historicos()
-    df["Data"] = pd.to_datetime(df["Data"])
 
-    # Gráfico com Data como índice
+    if df.empty:
+        st.warning("Sem dados para exibir.")
+        return
+
+    df["Data"] = pd.to_datetime(df["Data"])  # Garante formato de data pro gráfico
+
     st.line_chart(df.set_index("Data"))
 
-    # Destaques
     st.subheader("📌 Destaques do Histórico")
     col1, col2, col3 = st.columns(3)
 
